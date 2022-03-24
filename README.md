@@ -60,7 +60,6 @@
     <td>owner of the resources allocated</td>
     <td>operate on the resources allocated</td>
  </tr>
-  
 </table>
 
 **Logical Execution Trace**
@@ -73,14 +72,35 @@
 - Queue system responsible for choosing the next ready process to run
 - Eeach event (i.e. netword traffic) has its own queue 
 
-**Process Segments** (shared amongst threads)
-- text: code for the program
-- data: stack, heap, variables
-- system data: resources managed by system, access using syscalls
+**Process Memory Layout** (shared amongst threads)
+- text: code executed by CPU
+- data: global variables (grows up)
+- stack: local variables (grows down)
+
+**User-mode / Kernel-mode**
+
+<table border="0">
+ <tr>
+    <td><b style="font-size:30px">User Mode</b></td>
+    <td><b style="font-size:30px">Kernel Mode</b></td>
+ </tr>
+ <tr>
+    <td>Processes scheduled by the kernel</td>
+    <td>Activity is associated with a process</td>
+ </tr>
+ <tr>
+    <td>Isolated from each other</td>
+    <td>Kernel memory is shared between processes</td>
+ </tr>
+  <tr>
+    <td>No concurrency issues </td>
+    <td>Concurrecny issues arise when process concurrently executing in a system call</td>
+ </tr>
+</table>
 
 **Thread items**
 - saved registers, program counter, stack pointer
-- stack: local variables, return address
+- stack: local variables, return address 
 - state: running, blocked, ready
 
 **Threading Models**
@@ -98,7 +118,10 @@
     - When an operation is complete, thread is interrupted to handle the result 
    
   https://courses.cs.vt.edu/cs5204/fall09-kafura/Presentations/Threads-VS-Events.pdf
-  
+ 
+**User Level Threads**
+**Kernel Level Threads**
+
 # Concurrency
   
 **Concurrency**: 
@@ -204,3 +227,15 @@
 
 **Starvation**: 
 - Process never receives the resource that it needs despite the resource repeatedly becoming available. The resource is always allocated to a process of higher priority.
+
+# MIPS R3000
+
+**Branch Delay**: Instruction after a branch or jump is always executed prior to destination of jump 
+```MIPS
+    j       1f
+    li      r2, 2           // branch delay slot
+    li      r2, 3           // branch delay slot
+1:  sw      r2, (r3) 
+```
+
+
