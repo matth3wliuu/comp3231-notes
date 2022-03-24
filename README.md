@@ -125,7 +125,7 @@
 **Atomic Instructions**
 - Hardware instructions provided by the microprocessor guaranteed to be atomic
 - Example: Test & Set Instruction: write to memory location & return its old value
-``` 
+``` C
   int key = 0;  
   void makeMattRich(int accNo, int money) 
   {
@@ -161,6 +161,46 @@
 
 # Deadlock
 
-**Deadlock**: A state at which no processes can progress because each process is waiting for an event that only anoher process can trigger.
+**Deadlock**: A state in which no processes can progress because each process is waiting for an event that only anoher process can trigger.
 
-**Deadlock Requirements
+**Deadlock Requirements**: 
+1. Mutual Exclusion: only one process can access a resource
+2. Hold & Wait: process holding a resource can request addition
+3. No Pre-emption: resource previous obtained by a process cannot be taken away before completion without side effects
+4. Circular Wait: two or more processes in a chain where each is waiting for a resource held by the next member in the chain
+
+**Livelock**: A state in which processes are not blocked but never makes progress
+- Two processes are trying to access the same file. However, each process surrenders the access to file if the other process has not yet accessed the file.
+
+**Deadlock solutions**
+1. Ignore Deadlocks
+    - reasonable if deadlocks rarely occur and or cost of prevention / recovery is high
+    - tradeoff between correctness & convenience
+2. Deadlock Prevention: enforce resource allocation rules such that a deadlock condition cannot occur 
+    - no ME: not plausible since some resources cannot be shared
+    - no H&W: process requests all resources needed before starting &rarr; process is never waiting
+        - not always possible to determine
+        - holds up resources that can be used by other process until it completes
+        - **variation**: surrender all resources if it's blocking another process &rarr; livelock
+    - no PE: not plausible
+    - no CW: can be achieved by resource ordering
+        - resources must be acquired in order (x &rarr; y): if y is needed, x must be acquired first 
+3. Deadlock Detection & Recovery: 
+    - apply deadlock detection algorithm to determine if system is deadlocked
+    - recover and restore progress by rolling back
+    - adds overhead to the OS
+4. Dynamic Avoidance:
+    - Acquire the maximum of each resource remaining before start
+        - not always possible since it's dependent on input
+    - Only grant further resource requests if it leads to a safe state 
+
+**Deadlock Detection & Recovery**
+- Invariant:  <img src="https://render.githubusercontent.com/render/math?math=\sum_{i=1}^n C_{ij} + A_{j}=E_{j}">
+- Detection Algorithm: GET IMAGE FROM KUAKERR
+
+**State Safety**:
+- System is currently not deadlocked AND remaining resources can be allocated in some order such that all process can complete even if they request for the maximum of a resource
+- Checking state safety: Suppose all processes request the maximum of a resource, can the resources be allocated such that all processes can complete 
+
+**Starvation**: 
+- Process never receives the resource that it needs despite the resource repeatedly becoming available. The resource is always allocated to a process of higher priority.
