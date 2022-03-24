@@ -77,7 +77,7 @@
 - data: global variables (grows up)
 - stack: local variables (grows down)
 
-**User-mode / Kernel-mode**
+**User / Kernel mode**
 
 <table border="0">
  <tr>
