@@ -118,8 +118,37 @@
     - When an operation is complete, thread is interrupted to handle the result 
    
   https://courses.cs.vt.edu/cs5204/fall09-kafura/Presentations/Threads-VS-Events.pdf
- 
-**User Level Threads**
+
+**Process Control Block (PCB)**:
+
+**Thread Control Block (TCB)**: 
+
+
+**User Level Threads**                                                                 
+- Implemented in the user level using library functions
+- OS has no knowledge of user level threads (it sees only a single process)
+- If a thread is blocked waiting for another thread in the same process, its state is saved and the dispatched switches to a ready thread.
+
+<table border="0">
+ <tr>
+    <td><b style="font-size:30px">Pros</b></td>
+    <td><b style="font-size:30px">Cons</b></td>
+ </tr>
+ <tr>
+    <td>Thread management is more performant and lightweight (library) </td>
+    <td>Limited to cooperative multithreading (no timer interrupt) </td>
+ </tr>
+ <tr>
+    <td>Threads can be synchronised without the OS</td>
+    <td>Does not take advantage of multiple CPUs</td>
+ </tr>
+  <tr>
+    <td>OS indepedent </td>
+    <td>If thread makes a blocking system call, the whole process blocks</td>
+ </tr>
+</table>
+
+
 **Kernel Level Threads**
 
 # Concurrency
