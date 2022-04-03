@@ -318,3 +318,27 @@
 ```
 
 # System Calls
+
+**Basics**:
+- Special function calls that provided controlled entry into the kernel
+- Perform privileged operations (access devices, network files etc) and return user mode with result 
+- Syscall interfance represents the abstract machine provided by the OS
+
+**Previleged Mode Operation**:
+- system, kernel-mode: all instructions and registers are available                     
+- user-mode: only a subset of the instruction set and only safe registers
+    - affect only the application 
+    - cannot interfere with OS 
+- OS provides mechanism to reserve memory space for user / kernel modes
+
+![This is an image](cpu-register.png)
+
+
+
+
+
+
+
+
+
+
