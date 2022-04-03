@@ -119,10 +119,12 @@
    
   https://courses.cs.vt.edu/cs5204/fall09-kafura/Presentations/Threads-VS-Events.pdf
 
-**Process Control Block (PCB)**:
+**Process Control Block (PCB)**: Data structure used to store information about a process
+- used by the OS to manage and execute processes when CPU is free
+- contains process id, state, registers, open files etc
 
-**Thread Control Block (TCB)**: 
-
+**Thread Control Block (TCB)**: Data structure within the kernel which contains information about a thread
+- contains thread id, state, program counter, register, pointer to a PCB, etc 
 
 **User Level Threads**                                                                 
 - Implemented in the user level using library functions
@@ -150,6 +152,30 @@
 
 
 **Kernel Level Threads**
+- Implemented by the kernel and offered to applicaitons as an API
+- Information about a thread is stored in kernel TCB
+- Threads are managed using system calls such as create, wait, exit, etc
+
+<table border="0">
+ <tr>
+    <td><b style="font-size:30px">Pros</b></td>
+    <td><b style="font-size:30px">Cons</b></td>
+ </tr>
+ <tr>
+    <td> Allows for pre-emptive multithreading </td>
+    <td> Creating new threads is expensive </td>
+ </tr>
+ <tr>
+    <td> Can overlap blocking I/O with computation </td>
+    <td> Synchronisation requires crossing between user / kernel space (expensive) </td>
+ </tr>
+  <tr>
+    <td> Can take advantage of multiprocessors </td>
+    <td></td>
+ </tr>
+</table>
+
+**Pre-emptive multithreading**: Timer interrupts will be automatically issued by the OS to prevent a process from holding on the CPU.
 
 # Concurrency
   
@@ -193,7 +219,33 @@
 ```
 - Busy Waiting: CPU time is wasted waiting for a thread to acquire the lock
 - Single core ussage &rarr; busy waiting prevents thread in the critical region to make progress
- 
+
+# Context Switch
+
+**Definition**: Storing and restoring the state associated with a process / thread
+- Essential in enabling multiple process to share the same CPU
+
+**Causes of a context swtich**:
+- System call: block or on exit()
+- Exception: 
+- Interrupt: timer interrupt causing the scheduler to execute another process
+
+**Requirements of a context switch**:
+- Transparent for process / threads: they should not noticing something else is running while they're dispatched
+    - switching between user-level threads from the thread's perspective = sequential execution
+- OS must save all state involved 
+
+**Procedure of a context switch**:
+1. Process running in user mode &rarr; sp pointing to user-level stack
+2. On exception, syscall or interrupt &rarr; sp pointing to kernel stack
+3. Trapframe is pushed onto the stack and sp is moved downwards 
+4. Execute C code to handle exception, syscall or interrupt &rarr; C activation stack builds up (down)
+5. Kernel chooses a target thread / proceess and the remaining kernel state is pushed onto the stack
+6. Current sp is stored in the PCB or TCB and sp of the target thread is loaded &rarr; context switched
+7. Rewind through the stack of the target (kernel state &rarr; C activation stack &rarr; trapframe &rarr; user mode)
+
+**Trapframe**: Stores all the registers used by the process that called switch
+
 # Synchronisation Primitives
 
 **Lock**: threads acquire / release a lock when entering / leaving a critical region
@@ -257,8 +309,6 @@
 **Starvation**: 
 - Process never receives the resource that it needs despite the resource repeatedly becoming available. The resource is always allocated to a process of higher priority.
 
-# MIPS R3000
-
 **Branch Delay**: Instruction after a branch or jump is always executed prior to destination of jump 
 ```MIPS
     j       1f
@@ -267,4 +317,4 @@
 1:  sw      r2, (r3) 
 ```
 
-
+# System Calls
