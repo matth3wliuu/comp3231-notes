@@ -372,13 +372,69 @@
 
 
 **Loading the epc**:
-```
+```MIPS
 lw r27, saved_epc
 nop
 jr r27
 rfe
 ```
 
+# File System
 
+**File System Abstraction**:
+
+<table border="0">
+ <tr>
+    <td><b style="font-size:30px">User's View</b></td>
+    <td><b style="font-size:30px">File System</b></td>
+ </tr>
+ <tr>
+    <td> Uniform namespace (universal file sysyem) </td>
+    <td> Collection of storage devices </td>
+ </tr>
+ <tr>
+    <td> Hierarchical structure </td>
+    <td> Flat address space </td>
+ </tr>
+  <tr>
+    <td> Arbitrary file sizes </td>
+    <td> Fixed sized blocks </td>
+ </tr>
+ <tr>
+    <td> Symbolic filenames  </td>
+    <td> Numerical block addresses (numbers) </td>
+ </tr>
+ <tr>
+    <td> Access control </td>
+    <td> No access Control </td>
+ </tr>
+ <tr>
+    <td> Tools for formatting, defragmentation, backup, consistency checking </td>
+    <td> </td>
+ </tr>
+</table>
+
+**FS Basics**:
+- Filename: convenient textual naming scheme provided by the FS
+- File structure: sequence of bytes
+- File types: regular files, directories and device files
+- File access types:
+    - sequential: every instance must read from beginning (no jumps)
+    - random: bytes can be read in any order by moving the file pointer (lseek)
+- File attributes: protection, owner, flags, time, size etc
+- File operations: create, delete, open, ...
+
+
+**File Organisation and Access**:
+- OS suppors unstructured files by organising its content using the ELF format 
+- Criterias for designing file layout
+    - rapid acess
+    - ease of update
+    - storage efficiency
+
+**Hierarchical Structure and Directories**:
+- Directories are special files owned by the OS to provide mappings between filenames and inodes
+- Files can be located by following down a path from the root through directories
+- Filenames don't have to be unique as long path is unique 
 
 
