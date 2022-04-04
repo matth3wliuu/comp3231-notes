@@ -220,32 +220,6 @@
 - Busy Waiting: CPU time is wasted waiting for a thread to acquire the lock
 - Single core ussage &rarr; busy waiting prevents thread in the critical region to make progress
 
-# Context Switch
-
-**Definition**: Storing and restoring the state associated with a process / thread
-- Essential in enabling multiple process to share the same CPU
-
-**Causes of a context swtich**:
-- System call: block or on exit()
-- Exception: 
-- Interrupt: timer interrupt causing the scheduler to execute another process
-
-**Requirements of a context switch**:
-- Transparent for process / threads: they should not noticing something else is running while they're dispatched
-    - switching between user-level threads from the thread's perspective = sequential execution
-- OS must save all state involved 
-
-**Procedure of a context switch**:
-1. Process running in user mode &rarr; sp pointing to user-level stack
-2. On exception, syscall or interrupt &rarr; sp pointing to kernel stack
-3. Trapframe is pushed onto the stack and sp is moved downwards 
-4. Execute C code to handle exception, syscall or interrupt &rarr; C activation stack builds up (down)
-5. Kernel chooses a target thread / proceess and the remaining kernel state is pushed onto the stack
-6. Current sp is stored in the PCB or TCB and sp of the target thread is loaded &rarr; context switched
-7. Rewind through the stack of the target (kernel state &rarr; C activation stack &rarr; trapframe &rarr; user mode)
-
-**Trapframe**: Stores all the registers used by the process that called switch
-
 # Synchronisation Primitives
 
 **Lock**: threads acquire / release a lock when entering / leaving a critical region
@@ -317,27 +291,93 @@
 1:  sw      r2, (r3) 
 ```
 
+# Context Switch
+
+**Definition**: Storing and restoring the state associated with a process / thread
+- Essential in enabling multiple process to share the same CPU
+
+**Causes of a context swtich**:
+- System call: block or on exit()
+- Exception: 
+- Interrupt: timer interrupt causing the scheduler to execute another process
+
+**Requirements of a context switch**:
+- Transparent for process / threads: they should not noticing something else is running while they're dispatched
+    - switching between user-level threads from the thread's perspective = sequential execution
+- OS must save all state involved 
+
+**Procedure of a context switch**:
+1. Process running in user mode &rarr; sp pointing to user-level stack
+2. On exception, syscall or interrupt &rarr; sp pointing to kernel stack
+3. Trapframe is pushed onto the stack and sp is moved downwards 
+4. Execute C code to handle exception, syscall or interrupt &rarr; C activation stack builds up (down)
+5. Kernel chooses a target thread / proceess and the remaining kernel state is pushed onto the stack
+6. Current sp is stored in the PCB or TCB and sp of the target thread is loaded &rarr; context switched
+7. Rewind through the stack of the target (kernel state &rarr; C activation stack &rarr; trapframe &rarr; user mode)
+
+**Trapframe**: Stores all the registers used by the process that called switch
+
+
 # System Calls
 
 **Basics**:
-- Special function calls that provided controlled entry into the kernel
+- Special function calls that provided controlled entry into the kernel from the user space
 - Perform privileged operations (access devices, network files etc) and return user mode with result 
 - Syscall interfance represents the abstract machine provided by the OS
+- Regular function calls cannot enforce security checks
 
-**Previleged Mode Operation**:
-- system, kernel-mode: all instructions and registers are available                     
-- user-mode: only a subset of the instruction set and only safe registers
-    - affect only the application 
-    - cannot interfere with OS 
-- OS provides mechanism to reserve memory space for user / kernel modes
+**Previleged Mode Operation**:                                                   
+- System, kernel-mode: all instructions and registers are available                
+- user-mode: only a subset of the instruction set and only safe registers   
+    - affect only the application                                                        
+    - cannot interfere with OS (i.e. cli on x86 can disable interrupts)                                                      
 
-![This is an image](cpu-register.png)
+![This is an image](user-kernel-register.png)|
 
-
-
-
+**System Call Procedure**:
 
 
+**Coprocessor 0 (cp0)**:
+- Contains exception / interrupt management registers
+- Manipulated using kernel instructions `mtc0` and `mfc0`
+
+**c0_status**:
+
+![This is an image](c0_status.png)|
+- KU: 0 = kernel and 1 = user mode
+- IE: 0 = interrupts off and 1 = interrupts enabled
+- KU and IE bits are shifted left per each exception
+- c, p, o = current, previous, old
+
+**c0_cause**:
+
+![image](https://user-images.githubusercontent.com/40874612/161461515-e2169b5e-c217-4996-ae2e-33f812070fae.png)
+- ExcCode = code number of the exception
+    - 0 = interrupt and 8 = system call
+
+**c0_ecp**:
+- Exception program counter which points to address of where to restart execution after handling an exception
+
+**Exception Vector**: Stores the code required to handle different exceptions
+
+**Hardware Support for Exception Handling**:
+1. Executing code stored at pc in user mode and interrupts on. Interrupts occurs.
+2. Instruction at pc is stored into the epc 
+3. KU and IE bits in the status register is shifted to the left so `KUc` and `IEc` are 0 (disabled)
+4. Exception code is placed into c0_cause (i.e. 0 for interrupt)
+5. Address of exception vector placed into pc (cpu now running code in pc in kernel mode with interrupts off)
+6. HANDLES THE EXCEPTION
+7. Load the address stored in the epc back in the pc and call the `rfe` instruction to shift status bits to the right
+8. cpu now running the code in the same state as when the exception occurred
+
+
+**Loading the epc**:
+```
+lw r27, saved_epc
+nop
+jr r27
+rfe
+```
 
 
 
