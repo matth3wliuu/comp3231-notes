@@ -431,6 +431,9 @@ rfe
     - rapid acess
     - ease of update
     - storage efficiency
+- Performance is limited by seek time and rotational delays
+    - keep blocks likely to be accessed together close to each other
+
 
 **Hierarchical Structure and Directories**:
 - Directories are special files owned by the OS to provide mappings between filenames and inodes
@@ -438,3 +441,93 @@ rfe
 - Filenames don't have to be unique as long path is unique 
 
 
+**Unix Storage Stack**:
+- File descriptor / Open file tables:
+    - Manage / trakck files opened by user level processes 
+    - Match system call interface to VFS calls
+- Virtual file system (VFS):
+    - Presents an unified interface to the mutliple file systems attached
+- File sytem:
+    - Presents a directory hierarchy that hides the physial location of data on the disk
+    - Interact with the blocks provided by the device drivers to create higher abstractions
+- Buffer cache: 
+    - Keep recently accessed disk blocks in memory to optimise repeated access
+- Disk scheduler:
+    - Prioritise waiting requests that fetch blocks closer to each other on the driver 
+- Device driver:
+    - Hides the details of the hardware
+    - Presents a sequential interface to the disk for higher software layers
+- Disk controller: 
+    - Abstracts the circulary structure and geometry of the disk to a linear seqeunce of blocks
+    - Provides the interface between the hard-disk and the device driver  
+- Hard disk: 
+    - Platters containing tracks and sections 
+
+**File System Implementation Requirements**:
+- Must map symbolic filenames to a collection of block addresses on the disk
+- Track which blocks belong which files
+- Track the order in which files are formed from blocks
+- Track which blocks are free for allocation
+
+**Internal Fragmentation**: 
+- Space wasted within the allocated memory region
+- Allocated region may be bigger than memory required (size difference is wasted)
+
+**External Fragmentation**:
+- Space wasted outside the allocated memory region
+- Enough memory space exist to accomodate a request however it's not usable since non-contiguous
+
+**Trade-offs in FS block sizes**:
+- Large blocks require less metadata to be stored
+- Smaller blocks wastes less disk space (fewer internal fragmentation)
+- Sequential access:
+    - larger block size &rarr; fewer I/O operations
+- Random access:
+    - larger block size &rarr; more unrelated data per load
+
+### File Allocation Methods
+**1. Contiguous Allocation**:
+- Tracks only the address of the starting block and the length of the file
+- Increase performance for sequential operations
+- Require max file system at the time of creation (cannot grow)
+- Deleting files leads to  external fragmentation
+
+**Dynamic Allocation Stratigies**:
+- Disk space is allocated on demand so no pre-allocation is required
+- Allocation occurs in fixed-size blocks
+- No external fragmentation but potentially internal fragmentation (blocks not fully utilised)
+- File blocks are scattered across the disk (reduced performance)
+- May require the manipulation of complex datastructures
+
+**1. Linked List Allocation**:
+- Each block contains a pointer to the next block in the chain 
+- Best for sequential access and does not offer random access
+- No external fragmentation
+- Files can continue to grow in size as long as there are free blocks
+- Blocks end up scattered across the disk due to (allocs and frees) &rarr; decrease file access performance 
+
+**2. File Allocation Table (FAT)**:
+- Keep a map of the entire FS in a table where each entry stores the number of the next block of the file 
+- Table is stored in disk and replicated in memory to provide fast random access 
+- Requires lots of memory for large disk 
+- Searching for a free block is slow 
+
+**3. Inode Based FS**:
+- Each file has a table that maps inodes to disk block numbers
+- Only store table for open files in memory 
+- Fast random access like FAT 
+- I-nodes are allocated dynamically so strategies are required to find free spaces within the disk
+    - Free block list: linked list of all the free blocks in disk that are stored in free blocks so no space wasted
+    - Bit Table
+
+### Directory Implementation
+- Stored like normal files inside data blocks
+- FS assigns special meaning to the content of these files 
+    - each directory file is a list of directory entries
+    - each entry contain filename, attributes and i-node (map filename to disk blocks)
+    
+**fixed-size directory entries**: either too small or too big (waste space)
+
+**variable-size directory entries**: freeing directory entries can create external fragmentation
+
+**Searching directory listings**: Linear scan, hash lookup, b-tree
