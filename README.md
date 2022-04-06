@@ -530,4 +530,111 @@ rfe
 
 **variable-size directory entries**: freeing directory entries can create external fragmentation
 
-**Searching directory listings**: Linear scan, hash lookup, b-tree
+**searching directory listings**: Linear scan, hash lookup, b-tree
+
+### Virtual File System
+
+**Motivation**:
+- Systems need to support multiple file system types however modifying system code to understand each is inconvenient
+    - Provide single system call interface for different file systems 
+- Provide framework that separates file system independent code (interacting with `vfs` & `vnodes`) and file system dependent code (dealing with `inode`)
+
+**Struct vfs**:
+- fs independent fields:
+    - metadata: block size, max file size etc 
+- fs_data:
+    - inodes, superblock address etc
+- vfs_ops:
+    - getroot, read, write etc
+
+**Struct vnode**:
+```C
+struct vnode {
+    int ref_count;                  // number of references to this vnode by file descriptors
+    struct spinlock countlock;      // lock to achieve mutual exclusion
+    struct vfs / fs *vn_fs;         // pointer to above struct
+    void *data;                     // FS specific vnode data (e.g. memory copy of inodes)
+    
+    const struct vnode_ops *ops;    // array of vnode functions
+}
+```
+
+**File Descriptors**:
+- Each open file has a corresponding file descriptor
+- `vnode_ops` uses file descriptors to determine which files to operate on 
+Each file descriptor contains:
+    - file pointer: off_set to where the next operation (e.g. `read`) occurs at
+    - mode: how the file must be used (e.g. readonly)
+
+**FD & OF Table Designs**:
+1. Vnode number as a file descriptors:
+    - each number has an associated file pointer to the vnode
+    - problem:
+        - concurrently opening the same file system does not return 2 separate file descriptors 
+    - 
+2. Single global open file array
+    - each index is a file_descriptor
+    - each entry contains a file pointer and pointer to a vnode
+    - problem:
+        - fd 0-2 should be different per process however there is only one of each in this design
+3. Per process file descriptor table
+    - Each process has its own open file array and each entry contains a fp and pointer to vnode
+    - problems:
+        - forking produces a child process that shares the same file pointer as the parent
+        - dup2 produces a new file descriptor that shares the same file pointer as the old
+            - in the current design, the file pointers will not be synchronised in both cases
+4. Per process file descriptor table with global open file table
+    - Each process has its own file descriptor table and each entry contains 
+        - read / read permissions
+        - in use status
+        - pointer to an open file
+    - All processes share access to the global open file table and each entry contains
+        - pointer to vnode
+        - number of file descriptors pointing it 
+        - file pointer
+    - Resolves all the aforementioned problems 
+
+
+**Buffer**:
+- Temporary storage used to transfer data from two entities (e.g. application and disk)
+- Stored in kernel RAM for performance
+- Use when speed of receiving and processing data is different
+
+**Cache**:
+- Fast storage (typically RAM) used to temporarily store data to improve performance for repeated access to the same data
+    - unused kernel memory space that may change in size depending on current memory demands
+- Before loading a block from disk, check if it's in cache to prevent disk access and improve performance
+
+**Buffering disk blocks**:
+- read-ahead can be implemented by pre-loading the next required block into the kernel buffer
+    - loading disk blocks into buffer before the application needs it
+    - avoid waiting for the next read instruction  
+Applications wishes to write a file to disk however its size may not match a full block
+1. Application issues the request and writes to the buffer
+2. Immediately return back to the program to resume execution and avoid waiting for write to complete
+3. The entire block of where the write occurs is transferred into the buffer and updated
+3. OS arranges for the entire block to be written back to disk in the backround
+- 2 and 3 occur at the same time to improve performance 
+
+**How buffering is related to caching**:
+- Data is always read into the buffer since having another copy inside the cache is wasteful
+- After use, block should be cached so future access can hit the cached copy instead
+
+**Unix Buffer Cache**:
+- On read: hash the device number and block number &rarr; check if match in buffer cache 
+    - yes &rarr; used cached copy
+    - no &rarr; follow the collision chain
+        - if not found &rarr; load block from disk into buffer cache
+- Policy must exist to be able to read in new blocks by replacing existing blocks when the buffer cache is full
+    1. FIFO: does not reflect access pattern
+        - first thing read in ≠ first thing not needed
+    2. LRU: not strict LRU
+    
+ **File system consistency**:
+ - When an application writes to disk, the data is expected to survive and make it to the file
+ - Strict LRU will keep critical file system data in memory forever if they're frequently used
+    - cached disk blocks are prioritised based of how critical they are to the file system consistency
+    - usually scheduled for immediate write to disk
+- Losing directory, inode blocks etc can corrupt the FS 
+- Data blocks that corrupt only the file they're associated with are scheduled periodically to write back to disk (unix: 30 seconds)
+ 
