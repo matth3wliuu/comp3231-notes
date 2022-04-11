@@ -731,6 +731,7 @@ Applications wishes to write a file to disk however its size may not match a ful
 **File System Reliability**
 - disk writes are buffered in RAM
     - OS crash / power outage &rarr; data lost
+    - 3 points of failures are directory entry &rarr; inode &rarr; data blocks
     - writes are periodically committed to disk (i.e. every 30 desconds)
     - `sync` command to force a flush
 - FS operations are not atomic
