@@ -317,7 +317,6 @@
 
 **Trapframe**: Stores all the registers used by the process that called switch
 
-
 # System Calls
 
 **Basics**:
@@ -335,7 +334,6 @@
 ![This is an image](user-kernel-register.png)|
 
 **System Call Procedure**:
-
 
 **Coprocessor 0 (cp0)**:
 - Contains exception / interrupt management registers
@@ -638,7 +636,7 @@ Applications wishes to write a file to disk however its size may not match a ful
 - Losing directory, inode blocks etc can corrupt the FS 
 - Data blocks that corrupt only the file they're associated with are scheduled periodically to write back to disk (unix: 30 seconds)
  
-# Ext2 File System
+### Ext2 File System
 
 **Features**
 - Block size (1024, 2048, 4096)
@@ -687,5 +685,47 @@ Applications wishes to write a file to disk however its size may not match a ful
 - inode free list also randomised over time
 
 ### Berkeley Fast File System (FFS)
+
+**Disk Layout**
+- collection of equally sized and structured block groups
+
+![image](Disk-layout-of-EXT2-file-system.png)
+
+**Layout of a Block Group**
+- superblock:
+    - replicated in each group to aid recoverability &rarr; no longer vulnerable to one superblock becoming corrupted
+    - overall free inode and block counters
+    - metadata indicting whether system checks are required
+        - unclean unmount, inconsistency, regular checks based on last unomount and time
+- group descriptor:
+    - replicated in each group to aid recoverability
+    - location of the bitmaps
+    - counters for free blocks and inodes in this group
+    - number of directories 
+- data block bitmap: which data blocks are free or in use
+- inode bitmap: which inodes are free or in use
+
+**Performance Improvements**
+- block groups place related inodes and data blocks close to each other &rarr; less distance in disk
+- pre-allocate up to 8 blocks on write &rarr; better contiguity for content written
+- store files within a directory in the same group 
+
+**Ext2fs Directories**
+- special file managed by the kernel
+- translate filenames to inode numbers
+- deleting inode entries
+    - setting inode number to 0
+    - add length of current inode to length of previous inode
+
+**Hard Links**
+- same inode can have multiple names
+- when deleting a file by name (removing the directory entry), the FS will delete the underlying inode ⇔ reference count = 0
+- hard links cannot be made to files you don't own
+
+**Symbolic Links**
+- file that contains a reference to another file or directory
+- contains inode and datablock that has a path to the target file
+- marked by special file attribute
+- can point across FS boundaries (i.e. access files between FS)
 
 
