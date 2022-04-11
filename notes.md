@@ -262,7 +262,7 @@
         - **variation**: surrender all resources if it's blocking another process &rarr; livelock
     - no PE: not plausible
     - no CW: can be achieved by resource ordering
-        - resources must be acquired in order (x &rarr; y): if y is needed, x must be acquired first 
+        - resources must be acquired in order (`x` &rarr; `y`): if `y` is needed, `x` must be acquired first 
 3. Deadlock Detection & Recovery: 
     - apply deadlock detection algorithm to determine if system is deadlocked
     - recover and restore progress by rolling back
