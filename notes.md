@@ -728,4 +728,14 @@ Applications wishes to write a file to disk however its size may not match a ful
 - marked by special file attribute
 - can point across FS boundaries (i.e. access files between FS)
 
-
+**File System Reliability**
+- disk writes are buffered in RAM
+    - OS crash / power outage &rarr; data lost
+    - writes are periodically committed to disk (i.e. every 30 desconds)
+    - `sync` command to force a flush
+- FS operations are not atomic
+    - incomplete transaction &rarr; FS can become inconsistent & data may be lost
+- e2fsck: scans disk after unclean shutdown & attempts to restore FS invariants
+- Journalling FS
+    - FS updates are kept in a journal
+    - replay last journal entries upon unclean shutdown
