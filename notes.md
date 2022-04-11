@@ -739,3 +739,51 @@ Applications wishes to write a file to disk however its size may not match a ful
 - Journalling FS
     - FS updates are kept in a journal
     - replay last journal entries upon unclean shutdown
+
+### Ext3 File System
+
+**Motivation**
+- add journalling capabilities to ext2fs
+- backwards & forward compatibility with ext2 to build upon its proven performance
+- reuse most of the ext2 codebase and tools
+
+**Journalling Approaches**
+<table border="0">
+ <tr>
+    <td><b style="font-size:30px"> Journal FS Data Structure Updates </b></td>
+    <td><b style="font-size:30px"> Journal FS Disk Block Updates </b></td>
+ </tr>
+ <tr>
+    <td> ✅ efficient use of journal space </td>
+    <td> ❌ even small updates can add a whole block to the journal </td>
+ </tr>
+ <tr>
+    <td> ❌ individual updates are executed separately </td>
+    <td> ✅ updates to the same block can be aggregated to a single update </td>
+ </tr>
+  <tr>
+    <td> ❌ journalling layer must understand FS semantics </td>
+    <td> ✅ journalling layer is FS independent(easy to implement) </td>
+ </tr>
+
+</table>
+
+**Journal Block Device (JBD)**
+- JBD is the ext3 journalling layer
+- Interface
+    - start: start a transation
+    - update: update a disk block 
+    - complete: completed transactions are buffered in RAM
+    - commit: write transaction data to the journal 
+    - checkpoint: flush the journal to disk
+- can be stored on a block device or file &rarr; ext2 compatibility
+- independent of ext3 specific data structures 
+    - JBD is only concerned with journalling
+    - can be used by any FS that requires journalling
+
+**Journalling Mode**
+- metadata + data
+    - enforces atomicity of all FS operations
+- metadata journalling
+    - data blocks are written directly to disk
+    - improve performance since the data does not need to be written to JDB
