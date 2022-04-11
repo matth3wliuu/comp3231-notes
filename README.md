@@ -638,3 +638,54 @@ Applications wishes to write a file to disk however its size may not match a ful
 - Losing directory, inode blocks etc can corrupt the FS 
 - Data blocks that corrupt only the file they're associated with are scheduled periodically to write back to disk (unix: 30 seconds)
  
+# Ext2 File System
+
+**Features**
+- Block size (1024, 2048, 4096)
+- Inode based 
+
+**Inode**
+- Each file is an inode on disk
+- Each inode has an unique number and contains
+    - metadata: access rights, owner, mode, time, ...
+    - block index table of a file
+    - size = offset of highest byte written to the file 
+- Directories map filenames to inode numbers
+ 
+ **Inode Blocks**
+- Direct blocks: 
+    - block numbers for the first 12 blocks
+    - most files are small &rarr; all of its contents will be here
+- Single indirection:
+    - stores a block number of a block containing more block numbers
+    - requires two disk access 
+    - max file size = 268 KiB
+- Double and triple indirections follows the same idea
+
+**Inode Block Accessing Scheme**
+- Find the binary offset by taking the base of each indirection level as 0
+- Use the binary offset as index to traverse through the indirection levels 
+
+**Worst Case Access Patterns for Allocated Inode**
+- read 1 byte: 4 accesses in triple indirect
+- write 1 byte: 4 reads and 1 write in triple indirect
+
+**Worst Case Access Patterns for unallocated Inode**
+- watch again lect11 (pg 29)
+
+### s5fs 
+
+**Disk Layout**
+- Boot block: contains code to bootstrap (load) the OS
+- Super block: contains information about the file system itself 
+    - number of inodes, free block and inode list, ...
+
+**Problems**
+- inodes at the start and data blocks at the end &rarr; long seek time (travel from inode to block)
+- corrupt the only superblock then the entire FS is corrupt
+- suboptimal block allocation: eventually resulted in random allocation
+- inode free list also randomised over time
+
+### Berkeley Fast File System (FFS)
+
+
