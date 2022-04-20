@@ -223,7 +223,7 @@
 # Synchronisation Primitives
 
 **Lock**: threads acquire / release a lock when entering / leaving a critical region
-  - Spin lock (above code): use only in multi core systems OR if the critical region is short 
+  - Spin lock (above code): use only in multi core systems **OR** if the critical region is short 
   
 **Semaphore**: control concurrent access to common resources by multiple threads
   - Processes trying to access the resource that the semaphore is protecting will be placed into a waiting queue `P()` if it's not available 
