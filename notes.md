@@ -262,7 +262,7 @@
         - **variation**: surrender all resources if it's blocking another process &rarr; livelock
     - no PE: not plausible
     - no CW: can be achieved by resource ordering
-        - resources must be acquired in order (`x &rarr; y`): if `y` is needed, `x` must be acquired first 
+        - resources must be acquired in order (`x` &rarr; `y`): if `y` is needed, `x` must be acquired first 
 3. Deadlock Detection & Recovery: 
     - apply deadlock detection algorithm to determine if system is deadlocked
     - recover and restore progress by rolling back
@@ -569,7 +569,7 @@ Each file descriptor contains:
     - each number has an associated file pointer to the vnode
     - problem:
         - concurrently opening the same file system does not return 2 separate file descriptors 
-    - 
+    
 2. Single global open file array
     - each index is a file_descriptor
     - each entry contains a file pointer and pointer to a vnode
@@ -766,7 +766,6 @@ Applications wishes to write a file to disk however its size may not match a ful
     <td> ❌ journalling layer must understand FS semantics </td>
     <td> ✅ journalling layer is FS independent(easy to implement) </td>
  </tr>
-
 </table>
 
 **Journal Block Device (JBD)**
@@ -788,3 +787,293 @@ Applications wishes to write a file to disk however its size may not match a ful
 - metadata journalling
     - data blocks are written directly to disk
     - improve performance since the data does not need to be written to JDB
+
+# Memory Management
+
+**Memory Hierarchy**
+- register, cache, main memory (RAM), electronic disk, magnetic disk, optical disk, magnetic tapes
+- memory needed should be stored from the left 
+- fastest to the left and cheapest to the right
+
+**Monoprogramming**
+- memory (RAM) is shared by the program and OS 
+- fine if only one program is to be running and the memory required is less than memory available 
+- poor CPU utilisation if there is a lot of I/O because no other process can run in the background (overlap I/O with execution)
+- poor memory utilisation if a particular workflow does not require all the memory
+- used in small embedded systems
+
+![image](https://user-images.githubusercontent.com/40874612/164228333-747cb7ee-39ef-4460-9765-44d85cc62f79.png)
+
+**Multiprogramming**
+- OS aims to maximise memory and CPU utilisation &rarr; running more than one process at a time
+- Workflows with high percentage of I/O wait will required higher degrees of multiprogramming to achieve high CPU utilisation
+
+### Fixed Memory Partition
+
+**Fixed, Equal-Sized**
+- memory is divided into fixed equal sized partitions that are either free or busy
+- any process that is less than the partition size can be loaded  
+- applicable in small embedded system where work flow is static
+
+<table border="0">
+ <tr>
+    <td><b style="font-size:30px"> Pros </b></td>
+    <td><b style="font-size:30px"> Cons </b></td>
+ </tr>
+ <tr>
+    <td> easy to implement </td>
+    <td> internal fragmentation &rarr; poor memory utilisation </td>
+ </tr>
+ <tr>
+    <td> minimal OS overhead for processing where programs can be loaded </td>
+    <td> process larger than the partition size cannot run </td>
+ </tr>
+</table>
+
+**Fixed, Variable-Sized**
+- memory is partitioned at boot time into various sizes based on the expected workload
+    - work load is sometimes unpredictable 
+- each partition has a queue and processes are placed into the queue for the smallest partition they fit in
+
+<table border="0">
+ <tr>
+    <td><b style="font-size:30px"> Pros </b></td>
+    <td><b style="font-size:30px"> Cons </b></td>
+ </tr>
+ <tr>
+    <td> reduce internal fragmentation </td>
+    <td> added complexity to implement </td>
+ </tr>
+ <tr>
+    <td>  </td>
+    <td> partitions may be empty even if other partition have processes in the queue </td>
+ </tr>
+ <tr>
+    <td>  </td>
+    <td> process needs to wait until it's their turn in the queue </td>
+ </tr>
+</table>
+
+**Alternative Queuing Strategy**
+- single queue and when a partition becomes idle, any process that fits will be loaded (i.e. small process in large partition if needed)
+- trades internal fragmentation for maximum memory utilisation
+
+**Dynamic Memory Partition**
+- variable length partitions are allocated on demand from the pool of free memory 
+- processes are allocated exactly what it needs
+- results in external fragmentation in the free memory range that will be too small for process 
+
+**Requirements of dynamic partition allocation algorithms**
+- minimise external fragmentation
+- minimise memory overhead of bookkeeping 
+- efficiently support merge adjacent free partitions into a larger one 
+
+**Classic Approach**
+- available memory is tracked using a linked list 
+- each node storess the base address and size to denote the range 
+- nodes are stored in ascending order of address to simplify merging adjacent memory ranges
+- nodes are stored inside the free memory range itself so it not wasting space
+
+### Dynamic Partitioning Placement Algorithm
+
+**First-fit Algorithm**:
+- scans the linked list for the first entry that fits
+- if the available area is bigger than required then break it up into allocated and free 
+
+<table border="0">
+ <tr>
+    <td><b style="font-size:30px"> Pros </b></td>
+    <td><b style="font-size:30px"> Cons </b></td>
+ </tr>
+ <tr>
+    <td> finds a match very quickly </td>
+    <td> allocation is baised towards the front end of the memory </td>
+ </tr>
+ <tr>
+    <td> easy to implement </td>
+    <td> larger blocks tends to be preserved at the end of memory </td>
+ </tr>
+</table>
+
+**Next-fit Algorithm**
+- modified first-fit where it begins searching from where the last request succeeded 
+- motivation: spread allocation more evenly throughout the entire memory region to avoid skipping over small holes at the start 
+- in practice, the large free space at the end will be broken up into smaller holes and eventually lead to worse external fragmentation than first-fit
+
+**Best-fit Algorithm**
+- complete search through the list to find the smallest block that fits the request
+- since the smallest possible block is chosen, over time there will be many unuseable external fragmentation regions
+
+**Worst-fit Algorithm**
+-  complete search through the list to find the largest available block
+-  motivation: to leave useable fragmentation left over 
+-  complete searches through the list but does not result in significantly less fragmentation
+
+**Compaction**
+- process to reduce external fragmentation by recombining all free memory into a single large block
+- relocating programs using pointers may lead to addresses in the free region after compaction being pointed to 
+- generally require hardware support that preserves everything used by a program such that all addresses being referred will point to the correct things after relocation
+
+**Logical Addresses & Memory Binding**: 
+- logical address: specific locations within a program and they must refer to physical memory during execution
+
+<table border="0">
+ <tr>
+    <td><b style="font-size:30px"> When does logical addresses become bounded to physical addresses </b></td>
+ </tr>
+ <tr>
+    <td> ❌ compile / link time: compiler will then need to know where the program will be executing at compile time and it needs to recompile if location changes </td>
+ </tr>
+ <tr>
+    <td> ❌ load time: compiler can simply generate relocatable code that will be bounded to physical addresses by the loader. </td>
+ </tr>
+ <tr>
+    <td> ✅ runtime: translation of compile-time address to physical address is handled by special hardware  </td>
+ </tr>
+</table>
+
+- binding at load time reduces the performance of loading and prevents executable code from being shared between applications running the same program since the code is modified everytime it's loaded
+
+### Hardware Support for Runtime Binding & Protection 
+
+**Running processes in logical addresses**
+- for a process `P` to run using logical addresses (i.e. `0x0000` to some limit)
+    - an appropriate offset must be added to the current base 
+        - achieve relocation & protection memory lower than `P`
+    - must enforce a upper boundary to limit the maximum logical address `P` can generate
+        - protect memory above `P`
+
+**Base and Limit Registers**
+- restrict and relocate the currently active process 
+- base and limit registers must be changed at load time, relocation or context swtich to allow a different process to run
+
+<table border="0">
+ <tr>
+    <td><b style="font-size:30px"> Pros </b></td>
+    <td><b style="font-size:30px"> Cons </b></td>
+ </tr>
+ <tr>
+    <td> supports protected multi-processing </td>
+    <td> physical memory allocation must be contiguous </td>
+ </tr>
+ <tr>
+    <td>  </td>
+    <td> entire process must be in memory </td>
+ </tr>
+ <tr>
+    <td>  </td>
+    <td> Does not support partial sharing of address space (i.e code, datastructures, etc) </td>
+ </tr>    
+</table>
+
+**Timesharing & Swapping**
+- require more than just a small number of processes running in main memory at once 
+- need to support a mix of active & non-active process of varying longevity
+- backing store: fask disk large enough to accomodate copies of all memory images for all users
+- processes can be temporarily swapped out from main memory to a backing store and later brought back into memory to continue execution
+- low priority (idle) processes are swapped out so higher priority processes can be loaded and executed
+- total transfer time is proportional to the amount of memory swapped (usually slow)
+
+
+# Virtual Memory
+
+**Motivation**
+- virtual memory was developed to address the issues of previous approaches of managing multiprocessing
+- external fragmentation, protection, swapping and execution of processes larger than main memory
+
+**Paging Overview**
+- process' physical memory does not have to contiguous 
+- frames: 
+    - small equal sized partitions of the physical address space
+- pages:
+    - small equal sized partitions of a process' virtual (logical) address space 
+- page table:
+    - data structure managed by the OS that stores the relationship between virtual addresses and physical memory 
+    - contains the frame location (physical) of every page (virtual) 
+    - hardware is used to translate virtual addresses to physical addresses
+- no external fragmentation 
+- small internal fragmentation on the last page because
+- allows sharing between processes as multiple pages can map to the same frame
+- programmers now only have to deal with virtual addresses and not have to worry about where it will be stored in physical memory
+
+**Memory Management Unit (TLB)**
+- it receives virtual addresses generated by the CPU and translates them into physical addresses that can be accessed in memory
+
+**Virtual Address Space**
+- the 0th page of every virtual address space is not used to denote NULL 
+- a process may only be partially resident so the OS can store pages that are not required for execution on disk and save memory
+
+**Page Faults**
+- applications / OS referencing an invalid page triggers a page fault (exception)
+- illegal address &rarr; signal or kill the process for protection
+    - i.e. dereferencing null
+- page not resident 
+    - get an available frame, load the page from disk, update page table, load the tlb and restart the faulting instructions 
+
+**Shared Pages**
+- single copy of the code can be shared between all processes executing it 
+- code must not be self-modifying and lead to inconsistencies
+- code must appear at the same virtual address for all processes
+
+**Page Table Structure**
+- an array of frame numbers indexed by page number
+- each page table entry contains 
+    - caching bit: set if the cpu should bypass the cache to ensure data immediately arrives at the destination
+    - modified bit: set if changes were made 
+    - referenced bit: set if paged was accessed 
+    - protection bits: indicate read, write, execute permissions
+    - valid bit: to indicate if the translation is valid
+    
+![image](https://user-images.githubusercontent.com/40874612/164355586-6eb92df8-933b-4070-b1d6-e4d20f55f803.png)
+
+**Address Translation**
+- programs uses virtual addresses
+- TLB translates the virtual address to physical address
+- first check the valid bit
+    - yes &rarr; entry_lo = page table entry
+    - no &rarr; page fault 
+- most significant bits are used to index into the page table
+- least significant bits are directly in the physical address with no translation
+    - each page = 4096 bytes so, 12 bits are enough to store every possible offset 
+
+### Page Table
+- for a 64 bit architecture, there would be 2^(64-12) page table entries for every process &rarr; too big
+- page tables are implemented as data structures in main memory so, a compact representation is required to preserve space but it also needs to be fast to search 
+
+**Two Level Page Table**
+- initially set all first level entries to null and only allocate if it's needed 
+- given a 32 bit virtual address and 10-10 design, 
+    - first 10 bits are used to index into the first level of page table
+    - next 10 bits are used to index into the second level of the page table to retrive the page table entry (frame number)
+    - remaining 12 bits are the offset
+- get the frame from the physical memory by `frame number | offset`
+
+### Inverted Page Table (IPT)
+- array of page numbers (physical frames) indexed by frame number 
+1. hash the virtual page number (first 20 bits) to produce an index in the hash table
+2. extract the index and use it to index into the IPT 
+3. match the PID and virtual page number 
+    - yes &rarr; use index value as frame number for translation
+    - no &rarr; check next candidate using the next index from the current entry
+4. null table entry &rarr; page fault
+
+![image](https://user-images.githubusercontent.com/40874612/164362537-9bfd06aa-9d69-466d-9926-e417e6ac9765.png)
+
+- size of IPT is proportional to the size of RAM since it stores all the physical frame that back virtual addresses
+- saves a significant amount of space since only one of copy of the page table is needed 
+- frames cannot be shared between processes since each physical frame number has only one corresponding PID and virtual page number value
+
+
+### Hashed Page Table (HPT)
+- improvement upon IPT by supporting sharing 
+- same fast lookup as IPT
+- page table sized based on physical memory size 
+
+![image](https://user-images.githubusercontent.com/40874612/164363448-e5079680-2ef2-4e71-9d7b-9b9450e64020.png)
+- both processes 0 and 1 were able to map virtual page number `0x5` to physical frame number `0x42`
+
+
+
+
+
+
