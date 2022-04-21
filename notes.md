@@ -1070,7 +1070,7 @@ Applications wishes to write a file to disk however its size may not match a ful
 - page table sized based on physical memory size 
 
 ![image](https://user-images.githubusercontent.com/40874612/164363448-e5079680-2ef2-4e71-9d7b-9b9450e64020.png)
-- both processes 0 and 1 were able to map virtual page number `0x5` to physical frame number `0x42`
+- both processes 0 and 1 are able to map their virtual page number to physical frame number `0x42`
 
 
 
