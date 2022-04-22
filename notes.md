@@ -1264,9 +1264,111 @@ Applications wishes to write a file to disk however its size may not match a ful
             - below lower bound &rarr; decreate number of frames
 
 
-# Multiprogramming
+# Multiprocessor Systems
+
+**Motivation**
+- a single CPU can only go so fast, so a work load that is not I/O or memory bound can be parallelised to take advantage of multiple CPUs
+- running more than one processor on the same memory
+- sharing hardware (disk etc) between CPU for economical reasons
+
+**Amdahl's Law of Parallelisation**
+- given a proportion `P` that can be parallised and the reset serial (`1 - p`), the speed up using `N` processors is given by `1 / ( (1 - p) + P / N )`
+- max speed up when `N = ∞`, so max speed up = `1 / (1 - p)
+- critical sections cannot be parallised and hence no speedup possible
+- minimise serial regions to maximise speedup
+
+**Bus-based Uniform Memory Access Multiprocessor**
+- connecting multiple processors on a single bus (electrical wiring) to the memory
+    - access to all memory occurs at same speed for all processors
+- scalability is limited by bus bandwidth despite efforts of using caching to minimise access 
+    - reduced by hardware design and ensuring cache locality and limited data sharing
+
+**Multiprocessor Caching**
+- each processor has a local cache in order to reduce access to main memory
+    - ideally CPU only access their local cache but not possible since it's only a subset of main memory
+    - bus bandwidth is still a bottleneck with more CPUs
+
+**Cache Consistency**
+- data stored in disk may be different to what is stored in a CPU's cache so multiple CPU accessing the same address will retrieve different content
+- hardware handled issue where writes to one cache will propagate to all entries in appropriate caches (consumes bandwidth)
+
+### Symmetric Multiprocessor (SMP)
+
+**Private OS for each CPU**
+- each CPU can only access physical memory that has been allocate &rarr; no concurrency issues
+- each CPU handles the system calls from their own OS 
+
+<table border="0">
+ <tr>
+    <td><b style="font-size:30px"> Pros </b></td>
+    <td><b style="font-size:30px"> Cons </b></td>
+ </tr>
+ <tr>
+    <td> easy to implement  </td>
+    <td> each processor has its own scheduling queue &rarr; some processors may overload while others are idle  </td>
+ </tr>
+ <tr>
+    <td> scalable because there are no shared serial sections </td>
+    <td> each processor has a fixed memory partition &rarr; some processors may thrash while others are under utilised </td>
+ </tr>
+ <tr>
+    <td> no CPU concurrency issues because there is no sharingt </td>
+    <td> </td>
+ </tr>    
+</table>
 
 
+**Symmetric Multiprocessors (SMP)**
+- one OS kernel running on all processors so it can distribute resources and load evenly 
+- real concurrency in the kernel where multiple processors may access the same kernel data structures &rarr; race conditions 
+    1. use a single mutex to make the entire kernel a critical section
+        - one CPU in the kernel at once (multiprocessing obsolete)
+        - CPUs waiting to obtain the lock becomes a bottleneck if workload is mostly I/O bound
+        - limited by the throughput of the critical section
+    2. identify and make largely independent parts of the kernel a critical section
+        - allows for more parallelism in the kernel
+        - difficult to identify non-interfering parts 
+        - kernel activities requiring more than one lock &rar; deadlock &rarr; enforce complex lock ordering scheme 
+
+
+### Multiprocessor Synchronisation
+- unlike uniprocessors, disabling interrupts does not prevent multiple CPUs from executing inside a critical section in parallel &rarr; hardware support
+
+**test & set on SMP**
+- multiple CPUs can observe a 0 from TAS and think they can obtain the lock
+- TAS is an indivisiable CPU instruction but not indivisible memory instruction 
+- solution: hardware blocks all other CPUs from accessing the bus for the duration of a CPU's usage of TAS
+- issue: TAS is busy wait &rarr; if lock is held and CPU starts spinning &rarr; continuously block the bus with TAS &rarr; slow every other CPU down 
+- caching does not reduce bus contention
+    - TAS slows down cache refills
+    - TAS requires the same entry in all CPU caches to be invalidated &rarr; single read write instruction will be passed to different CPU caches to allow them to do TAS however this consumes bus bandwidth &rarr; slow down CPU with the lock trying to access main memory
+- solution:
+    - if the lock is held by a CPU, all other CPUs will read 0 into the address of the lock in their cache 
+    - each CPU will wait for it to change locally &rarr; no bus traffic 
+    - when a CPU releases the lock, hardware will write 0 into the address of the lock for CPU caches and main memory
+    - then a new CPU can acquire the lock (bus traffic)
+    ```C
+    start:
+        while (lock == 1);
+        r = TAS(lock);
+        if (r == 1) 
+            goto start;
+    ```
+   
+**Spinning Lock VS Blocking Lock**
+- uniprocessor: 
+    - doesn't make sense to use spinlock 
+    - time is simply wasted for a thread to acquire the lock instead of letting another thread to run
+- multiprocessor:
+    - spinlock: time penalty of waiting for a CPU to enter and exit its critical section
+    - blocking lock: there is an extra time penalty for context switching back to the original thread of execution
+- trade off:
+    - more efficient to spin if lock is held for less time than the overhead of context switching between threads
+        - spinlocks expects critical sections to be short and prevent other CPUs to spin for long (i.e. no waiting for I/O)
+
+**Preemption & Spinlocks**
+- if the spinlock holder is preempted when its timeslice is up, other CPUs will spin until the scheduler selects the holder again
+- solution: spinlock is implemented with interrupts off 
 
 # Scheduler
 
