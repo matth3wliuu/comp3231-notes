@@ -1155,6 +1155,9 @@ Applications wishes to write a file to disk however its size may not match a ful
 - temporal locality: recently access items are likely to be accessed again in the near future
 - spatial locality: items close to one another in memory tend to be referenced close together in time 
 
+<img width="591" alt="image" src="https://user-images.githubusercontent.com/40874612/164591947-231e753c-8b2a-42ac-9023-4c19889aa7c0.png">
+
+
 **Working Set**
 - working set: pages required by an application in a time window Δ in its memory
 - working set with the appropriate Δ can approximate a program's locality
@@ -1259,4 +1262,147 @@ Applications wishes to write a file to disk however its size may not match a ful
         - allocation is re-evaluated periodically based on page-fault rate
             - above upper bound &rarr; increase number of frames
             - below lower bound &rarr; decreate number of frames
+
+
+# Multiprogramming
+
+
+
+# Scheduler
+
+**What is the scheduler & its significance**
+- scheduler determines which process will run next based on a variety of criterias such as efficiency, fairness and priority
+- it is not important in situations where there is no choice or only thing one thing to run
+    - i.e. simple embedded systems like washing machines or early systems that simply ran the next punch tape
+- in modern systems, scheduling decisions can have a significant effect on the system's perceived performance and correctness 
+    - i.e. email processing and user clicking on button. run application before processing the email &rarr; responsive
+- scheduler will be required to make a scheduling decision when a process can no longer continue or when an activity results in more than one ready process
+    - interrupts, new process (parent or child), blocking on lock, waiting for I/O, etc 
+
+**I/O & CPU Bound Process Behaviours**
+
+<img width="643" alt="image" src="https://user-images.githubusercontent.com/40874612/164591802-39a5a6a0-b2a2-4d83-aaa7-7688fb9127f8.png">
+
+<table border="0">
+ <tr>
+    <td><b style="font-size:30px"> CPU Bound </b></td>
+    <td><b style="font-size:30px"> I/O Bound </b></td>
+ </tr>
+ <tr>
+    <td> spends most of its time doing computations </td>
+    <td> spends most of its time waiting for I/O completion </td>
+ </tr>
+ <tr>
+    <td> time to completion determined by CPU time received </td>
+    <td> time to completion determined by I/O request time </td>
+ </tr>
+</table>
+
+- mix of both CPU bound and I/O bound processes are required to keep both busy
+- favour I/O bound processes ahead of CPU bound processes
+    - I/O bound processes delay CPU bound processes by very little (time to receive the request) &rarr; more responsive
+    - CPU bound processes may delay I/O processes for a very long period (time to complete computation) &rarr; no overlap I/O with computation
+
+**Non-preemptive Scheduling**
+- if a process is in the running state, it will continue execution until it complete or blocks on I/O or voluntarily `yield` control back to OS
+- a single process can monopolised all the CPU time if yielding does not occur on a regular basis
+
+**Preemptive Scheduling**
+- a thread can be interrupted by the OS and moved to the ready state
+- scheduler will automatically let another process execute after a timer interrupt (time slice up) or a higher priority process has become ready
+- timer interrupts provide fairer usage of the CPU as threads cannot monopolise 
+
+### Scheduling Algorithms
+
+**Categories of Scheduling Algorithms**
+- Batch systems
+    - no users directly waiting &rarr; optimise for overall system performance
+    - use preemptive scheduling since no timer interrupts are required and it's simply an overhead
+- Interactive systems
+    - users wait for their results &rarr; optimise for user perceived performance (responsiveness)
+- Realtime systems
+    - jobs must be scheduled such that they meet their deadlines 
+
+**Scheduling Algorithm Requirements**
+- all algorithms must ensure
+    - all process are given a fair share of the CPU
+    - scheduler must enforce the policy that was chosen
+    - try to keep all parts of the system busy (overlap I/O with computation) 
+
+<table border="0">
+ <tr>
+    <td><b style="font-size:30px"> Interactive Algorithms </b></td>
+    <td><b style="font-size:30px"> Realtime Algorithms </b></td>
+ </tr>
+ <tr>
+    <td> minimising response time is important to the user's perception of the system's performance </td>
+    <td> jobs must meet their deadlines which otherwise result into poor consequences (data loss, etc) </td>
+ </tr>
+ <tr>
+    <td> proportionality is an user's expectation that short / long jobs will have short / long response times &rarr; favour short jobs </td>
+    <td> for some applications, an occassional miss is tolerable however, it must be predictable </td>
+ </tr>
+</table>
+
+**Interactive Scheduling**
+1. Round Robin Scheduling
+- each process is given a timeslice and when it's up, next process preemptives the current one and runs for its timeslice
+- preempted process will be placed at the back of the queue
+- implemented with ready queue and regular timer interrupts
+- suppose all timeslices are equal length, 
+    - increasing length &rarr; less switches 
+        - time wasted for context switches
+    - decreasing length &rarr; appears more responsive 
+        - degenerates into FCFS (scheduler not invoked) if burst legth < time slice length 
+- fair & easy to implement but assumes all processes are equally important
+
+2. Priority Based Scheduling
+- each process has an associated priority which is used to influence scheduler decisions 
+- priority can be determined internalls & externally
+    - internal: I/O or CPU bound
+    - external: importance to the user 
+- implemented with queue within queues and round robin for every process in the inner queue 
+- low priority processes may starve if there are also higher priority processes ready
+    - priority must be adjusted periodically 
+
+**Traditional Unix Scheduler**
+- multi-level queue with round robin at each level 
+- levels with lower values (-16 to 0) are higher priority and they are typically for kernel reserved disk and memory tasks (i.e. disk I/O)
+- levels with higher values (0 to 16) are lower priority and they are typically for user level applications
+- priorities are recalculated every second to
+    - prevent low priority processes from starving
+    - penalise CPU bound processes (bumped down) 
+    - reward I/O bound processes (bumped up)
+- `priority = cpu_usage + nice + base`
+    - cpu_usage: number of clock ticks which decay overtime to avoid permanently penalising a process
+    - nice: user supplied priority adjustment
+    - base: hard-wired negative values used to boost I/O bound processes 
+
+
+### Multiprocessor Scheduling
+- process of allocating `X` processes to `Y` CPUs
+
+**Single Shared Ready Queue**
+- when a CPU becomes idle, it takes the process with highest priority from the ready queue
+
+<table border="0">
+ <tr>
+    <td><b style="font-size:30px"> Pros </b></td>
+    <td><b style="font-size:30px"> Cons </b></td>
+ </tr>
+ <tr>
+    <td> easy to implement </td>
+    <td> queue is a shared resource so a lock must be used. CPU's becoming blocked and queuing to obtain the lock is a bottleneck </td>
+ </tr>
+ <tr>
+    <td> provides automatic load balancing for CPUs </td>
+    <td> does not consider that the last CPU a process ran on is more likely to have more related entries in its buffer </td>
+ </tr>
+</table>
+
+**Affinity & Multi Queue SMP Scheduling**
+- favour running a process on the same CPU that it ran on before to take advantage of the cache 
+- each CPU has a ready queue where processes are assigned based to their affinity and rough load balancing factor 
+- when a CPU invokes the scheduler, a process from its own ready queue is chosen to ensure affinity and remove the need of having to obtain a lock for the common case
+- if a CPU's ready queue is empty, it will run a process from a different queue instead going to idle &rarr; load balance to prevent idle CPU
 
