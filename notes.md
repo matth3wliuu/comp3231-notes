@@ -14,6 +14,9 @@
    - loaded into main memory (RAM) and remains there
    - facilitates safe interactions between software and hardware
  
+ **Motivation for Kernel Mode**
+ - 
+ 
  **Structure of the OS**
    - userland: where applications are executed
    - kernel: access to all the hardware in the computer
@@ -98,7 +101,7 @@
  </tr>
 </table>
 
-**Thread items**
+**Thread States**
 - saved registers, program counter, stack pointer
 - stack: local variables, return address 
 - state: running, blocked, ready
@@ -149,7 +152,6 @@
     <td>If thread makes a blocking system call, the whole process blocks</td>
  </tr>
 </table>
-
 
 **Kernel Level Threads**
 - Implemented by the kernel and offered to applicaitons as an API
@@ -272,9 +274,11 @@
         - not always possible since it's dependent on input
     - Only grant further resource requests if it leads to a safe state 
 
-**Deadlock Detection & Recovery**
-- Invariant:  <img src="https://render.githubusercontent.com/render/math?math=\sum_{i=1}^n C_{ij} + A_{j}=E_{j}">
-- Detection Algorithm: GET IMAGE FROM KUAKERR
+**Deadlock Detection**
+<img width="700" alt="image" src="https://user-images.githubusercontent.com/40874612/165004992-baaef0e1-f119-4f17-8731-fe0e326de915.png">
+
+**Deadlock Recovery**
+sadad
 
 **State Safety**:
 - System is currently not deadlocked AND remaining resources can be allocated in some order such that all process can complete even if they request for the maximum of a resource
