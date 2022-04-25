@@ -275,10 +275,18 @@
     - Only grant further resource requests if it leads to a safe state 
 
 **Deadlock Detection**
+
 <img width="700" alt="image" src="https://user-images.githubusercontent.com/40874612/165004992-baaef0e1-f119-4f17-8731-fe0e326de915.png">
 
 **Deadlock Recovery**
-sadad
+- Preemption
+    - take resources from other processes 
+- Rollback
+    - checkpoint a process periodically and use the checkpointed state to restart the process if it deadlocks
+    - cannot guarantee it won't deadlock again
+- Killing process
+    - kill a process in the deadlock state and recover some resources
+    - resources can be used to execute a process from the beginning 
 
 **State Safety**:
 - System is currently not deadlocked AND remaining resources can be allocated in some order such that all process can complete even if they request for the maximum of a resource
