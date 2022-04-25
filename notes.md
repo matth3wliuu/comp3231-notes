@@ -10,17 +10,14 @@
     - ensures progress and no starvation
  
  **Kernel**
-   - portion of the OS running in previledged mode
-   - loaded into main memory (RAM) and remains there
-   - facilitates safe interactions between software and hardware
+- portion of the OS running in previledged mode with unrestricted access to hardware
+- loaded into main memory (RAM) and remains there
+- facilitates safe interactions between software and hardware
  
- **Motivation for Kernel Mode**
- - 
- 
- **Structure of the OS**
-   - userland: where applications are executed
-   - kernel: access to all the hardware in the computer
-   - systems calls exists to allows applications to interact with hardware sources
+**Structure of the OS**
+- userland: where applications are executed
+- kernel: access to all the hardware in the computer
+- systems calls exists to allows applications to interact with hardware sources
 
 **Timer Interrupt**: process's time slice is up
   1. kernel regains control
@@ -120,7 +117,7 @@
     - Immediately returns to waiting for events
     - When an operation is complete, thread is interrupted to handle the result 
    
-  https://courses.cs.vt.edu/cs5204/fall09-kafura/Presentations/Threads-VS-Events.pdf
+https://courses.cs.vt.edu/cs5204/fall09-kafura/Presentations/Threads-VS-Events.pdf
 
 **Process Control Block (PCB)**: Data structure used to store information about a process
 - used by the OS to manage and execute processes when CPU is free
@@ -308,17 +305,17 @@
 **Definition**: Storing and restoring the state associated with a process / thread
 - Essential in enabling multiple process to share the same CPU
 
-**Causes of a context swtich**:
+**Causes of a Context Swtich**:
 - System call: block or on exit()
 - Exception: 
 - Interrupt: timer interrupt causing the scheduler to execute another process
 
-**Requirements of a context switch**:
+**Requirements of a Context Switch**:
 - Transparent for process / threads: they should not noticing something else is running while they're dispatched
     - switching between user-level threads from the thread's perspective = sequential execution
 - OS must save all state involved 
 
-**Procedure of a context switch**:
+**Procedure of a Context Switch**:
 1. Process running in user mode &rarr; sp pointing to user-level stack
 2. On exception, syscall or interrupt &rarr; sp pointing to kernel stack
 3. Trapframe is pushed onto the stack and sp is moved downwards 
@@ -536,11 +533,11 @@ rfe
     - each directory file is a list of directory entries
     - each entry contain filename, attributes and i-node (map filename to disk blocks)
     
-**fixed-size directory entries**: either too small or too big (waste space)
+**Fixed-size Directory Entries**: either too small or too big (waste space)
 
-**variable-size directory entries**: freeing directory entries can create external fragmentation
+**Variable-size Directory≈ Entries**: freeing directory entries can create external fragmentation
 
-**searching directory listings**: Linear scan, hash lookup, b-tree
+**Searching Directory Listings**: Linear scan, hash lookup, b-tree
 
 ### Virtual File System
 
@@ -603,7 +600,6 @@ Each file descriptor contains:
         - number of file descriptors pointing it 
         - file pointer
     - Resolves all the aforementioned problems 
-
 
 **Buffer**:
 - Temporary storage used to transfer data from two entities (e.g. application and disk)
@@ -986,12 +982,14 @@ Applications wishes to write a file to disk however its size may not match a ful
 - low priority (idle) processes are swapped out so higher priority processes can be loaded and executed
 - total transfer time is proportional to the amount of memory swapped (usually slow)
 
-
 # Virtual Memory
 
 **Motivation**
-- virtual memory was developed to address the issues of previous approaches of managing multiprocessing
-- external fragmentation, protection, swapping and execution of processes larger than main memory
+- eliminates external fragmentation because paging divides memory into fixed-size adjacent blocks so there are no free memory between allocated blocks
+- increased security because each process only sees and manages its virtual memory, unaware there are other processes running
+- applications that are bigger than main memory can be loaded because the OS only needs to keep the parts the process needs for execution in memory
+    - increases level of multiprogramming and hence memory and CPU usage
+- processes can share code (memory) at the same physical location to further reduce memory waste
 
 **Paging Overview**
 - process' physical memory does not have to contiguous 
@@ -1033,7 +1031,6 @@ Applications wishes to write a file to disk however its size may not match a ful
 - most significant bits are used to index into the page table
 - least significant bits are directly in the physical address with no translation
     - each page = 4096 bytes so, 12 bits are enough to store every possible offset 
-
 
 ### Translation Lookaside Buffer (TLB)
 
@@ -1113,8 +1110,7 @@ Applications wishes to write a file to disk however its size may not match a ful
 - Assuming 99% TLB hit ratio, average number of physical memory access = 0.99 * 1 + 0.01 * 2 = 1.01
 
 
-### Amdahl's Law
-**Law of deiminishing returns**
+**Amdahl's Law of Deminishing Return**
 - overall performance improvement is limited by the fraction of time an enhancement can be used 
 - speedup = executionTimeWithoutEnhancement / ExecutionTimeWithEnhancement &rarr; make the common case fast 
 
