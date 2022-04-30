@@ -386,6 +386,38 @@ jr r27
 rfe
 ```
 
+# Hardware Review
+<img width="731" alt="image" src="https://user-images.githubusercontent.com/40874612/166102889-3af5a0e0-4dbb-4d75-ace9-28dfe084f86b.png">
+
+- going down, decreasing cost per bit 
+- apply principle of temporal locality &rarr; data used now should be a heurestic to determine what should be up higher in the memory hierarchy
+
+**Caching**
+- improve performance of accessing slower (large) storage by keeping a small subset of temporal data in faster storage (cache)
+- main memory speed is a bottleneck for CPU performance &rarr; limited by how fast code and data can be fetched from main memory
+    - using cache memory (SRAM) as an intermediary between main memory and CPU
+        - cache hit: fetch data at the speed of the cache
+        - cache miss: cache fetch data from main memory 
+    - allocating lots of memory and random access &rarr; slowed down to the speed of main memory
+
+**Effective Memory Access Performance**
+- effective access time of memory subsystem depends on first level cache hit rate
+![image](https://user-images.githubusercontent.com/40874612/166103650-5a657c24-b8c8-4731-bd62-cb207ca4364a.png)
+
+**Disk Access Performance**
+- access time is dominated by time to locate the head not data
+- assuming 15,000 rpm 
+- rotational latency
+    - half rotation = 2 milliseconds
+- seek time
+    - time taken for head to move to a new location
+    - full travel time = 8 millisecods
+    - track to track = 0.5 milliseconds
+
+**Improving Performance**
+- cache the data from the disk to memory
+- minimising access to disk
+
 # File System
 
 **File System Abstraction**:
